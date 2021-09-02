@@ -1,0 +1,120 @@
+---
+title: "Explore Friends' Birthday"
+author: "Elsa_J"
+date: "2021/9/2"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+### Questions:
+
+# 1. How many people have the same birthday as you?
+# (Reserve time with them or save money to buy them a gift!)
+
+# 2. Which month contains the most number of birthdays?
+
+# 3. How many birthdays are in each month?
+
+# 4. Which day of the year has the most number of birthdays?
+
+# 5. Do you have at least 365 friends that have birthdays on everyday of the year?
+
+### Load Data
+```{r}
+birsd <- read.csv('birthdaysExample.csv', stringsAsFactors = FALSE)
+View(birsd)
+str(birsd)
+head(birsd)
+```
+# I got 1033 observations of only 1 variable. Obviously, I need to seprate them. And the format of the variable now is %m/%d/%y. They are stored as characters.
+
+# First, change the character to date format.
+```{r}
+birsd$dates <- as.Date.character(birsd$dates, format = "%m/%d/%y")
+str(birsd)
+head(birsd)
+```
+
+# Second, split the column into 3 new columns.
+```{r}
+birsd2 <- separate(birsd, dates, c("year", "month", "day"), sep = "-")
+#birsd2 <- as.data.frame(sapply(birsd2, as.numeric))
+```
+# I am ready to answer questions.
+
+### Anwers:
+# 1. How many people have the same birthday as you?
+# My birthday is Jan 15th.
+```{r}
+qplot(x = day, data = subset(birsd2, month == '01'),
+      xlab = 'Day of Jan',
+      ylab = 'Count')
+count(filter(birsd2, day == '15' & month == '01'))
+```
+# There are 3 people have the same birthday as me!
+
+# 2. Which month contains the most number of birthdays?
+# 3. How many birthdays are in each month?
+```{r}
+qplot(x = month, data = birsd2,
+      xlab = 'Month',
+      ylab = 'Count')
+birsd2 %>% group_by(month) %>% summarise(n = n())
+```
+# March conrains the most number of birthdays, 98 over 1033. April and December contain the least number of birthdays, 72 over 1033.
+# 01       89
+# 02       79
+# 03       98
+# 04       81
+# 05       72
+# 06       93
+# 07       86
+# 08       91
+# 09       96
+# 10       89
+# 11       87
+# 12       72
+
+# 4. Which day of the year has the most number of birthdays? 
+# 5. Do you have at least 365 friends that have birthdays on everyday of the year?
+```{r}
+qplot(x = day, data = birsd2,
+      xlab = 'Day of Month',
+      ylab = 'Count') +
+  facet_wrap(~month)
+birscount <- birsd2 %>% group_by(month, day) %>% summarise(n = n())
+subset(birscount, n == max(birscount$n))
+birsddate <- select(birscount, -n)
+
+#create one year date
+month <- c(seq(1, 1, length.out = 31),
+           seq(2, 2, length.out = 28),
+           seq(3, 3, length.out = 31),
+           seq(4, 4, length.out = 30),
+           seq(5, 5, length.out = 31),
+           seq(6, 6, length.out = 30),
+           seq(7, 7, length.out = 31),
+           seq(8, 8, length.out = 31),
+           seq(9, 9, length.out = 30),
+           seq(10, 10, length.out = 31),
+           seq(11, 11, length.out = 30),
+           seq(12, 12, length.out = 31))
+day <- c(seq(1, 31, length.out = 31),
+           seq(1, 28, length.out = 28),
+           seq(1, 31, length.out = 31),
+           seq(1, 30, length.out = 30),
+           seq(1, 31, length.out = 31),
+           seq(1, 30, length.out = 30),
+           seq(1, 31, length.out = 31),
+           seq(1, 31, length.out = 31),
+           seq(1, 30, length.out = 30),
+           seq(1, 31, length.out = 31),
+           seq(1, 30, length.out = 30),
+           seq(1, 31, length.out = 31))
+yeardate <- data.frame(month, day)
+
+birsddate <- as.data.frame(sapply(birsddate, as.numeric))
+anti_join(yeardate, birsddate, by = c("day", "month"))
+```
+# There are three days have the most number of birthdays, Feb 6th, May 22th, July 16th.
+# No, there are 17 days contain no one's birthday, Feb 8th, 21th, 22th, March 6th, April 16th, 21th, May 3rd, 24th, June 26th, Aug 3rd, 6th, 23th, Nov 11th, 13th, Dec 6th, 13th, 23th.
